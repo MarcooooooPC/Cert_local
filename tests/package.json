@@ -1,0 +1,14 @@
+{
+  "name": "certificados-tests",
+  "private": true,
+  "description": "Solo para desarrollo: pruebas de interfaz. No se sube al hosting.",
+  "type": "module",
+  "scripts": {
+    "server": "php run.php",
+    "ui": "node ui.mjs"
+  },
+  "devDependencies": {
+    "axe-core": "^4.11.0",
+    "playwright": "^1.65.1"
+  }
+}

@@ -1,0 +1,12 @@
+config/config.php
+storage/error.log*
+*.sqlite
+uploads/templates/tpl_*
+.DS_Store
+node_modules/
+dist/
+.env
+storage/backups/
+storage/schema-*
+uploads/fonts/*
+.impeccable/

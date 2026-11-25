@@ -1,0 +1,29 @@
+# Único .htaccess del portal. Funciona igual en la raíz del dominio o en una subcarpeta.
+# Requiere mod_rewrite: sin él Apache da error 500 en todo el sitio (falla cerrado, nunca expone config/).
+
+DirectoryIndex index.php index.html
+Options -Indexes
+
+RewriteEngine On
+
+# 1. Carpetas internas: código, configuración (clave de MySQL), esquema SQL, logs y pruebas.
+RewriteRule ^(app|config|database|storage|tests|dist)(/|$) - [F,L]
+
+# 2. Subidas: solo se sirven las imágenes de moldes y las fuentes; cualquier otra cosa (p. ej. un .php colado) da 403.
+RewriteRule ^uploads/(?!(templates/[^/]+\.(png|jpe?g)|fonts/[^/]+\.(woff2?|ttf|otf))$) - [F,L,NC]
+
+# 3. Archivos ocultos (.htaccess, .git…), salvo /.well-known/ (validación del SSL), y de texto con datos.
+RewriteRule (^|/)\.(?!well-known/) - [F,L]
+RewriteRule \.(md|sql|log|sqlite|sh|bak|old|orig|swp|dist|ini|lock|json)$ - [F,L,NC]
+
+# 4. Enlace público del certificado: /c/CODIGO → cert.php
+RewriteRule ^c/([A-Za-z0-9]{1,20})/?$ cert.php?code=$1 [L,QSA]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+</IfModule>
+# HSTS lo envía PHP solo cuando la petición llegó por HTTPS (app/Core/http.php). La política de lo subido: uploads/.htaccess

@@ -1,0 +1,242 @@
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url(../fonts/inter-latin.woff2) format('woff2')
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/montserrat-latin.woff2) format('woff2')
+}
+
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(../fonts/playfair-latin.woff2) format('woff2')
+}
+
+/* ==========================================================================
+   Apple Design System Tokens (apple-DESIGN.md)
+   SF Pro, Action Blue (#0066cc), Canvas Parchment (#f5f5f7),
+   Hairlines (#e0e0e0 / #d2d2d7), Pure Ink (#1d1d1f), Museum Gallery aesthetic
+   ========================================================================== */
+:root {
+  /* Modo oscuro: sigue al sistema; assets/js/theme.js puede fijar claro/oscuro cambiando <meta name="color-scheme">. */
+  color-scheme: light dark;
+
+  /* Apple Official Color Tokens */
+  --color-primary: #0066cc;
+  --color-primary-focus: #0071e3;
+  --color-primary-on-dark: #2997ff;
+  --color-ink: light-dark(#1d1d1f, #f5f5f7);
+  --color-body: light-dark(#1d1d1f, #f5f5f7);
+  --color-body-on-dark: #ffffff;
+  --color-body-muted: #cccccc;
+  --color-ink-muted-80: #333333;
+  --color-ink-muted-48: #7a7a7a;
+  --color-divider-soft: light-dark(#f0f0f0, #2c2c2e);
+  --color-hairline: light-dark(#e0e0e0, #38383a);
+  --color-canvas: light-dark(#ffffff, #1c1c1e);
+  --color-canvas-parchment: light-dark(#f5f5f7, #111113);
+  --color-surface-pearl: light-dark(#fafafc, #232325);
+  --color-surface-tile-1: #272729;
+  --color-surface-tile-2: #2a2a2c;
+  --color-surface-tile-3: #252527;
+  --color-surface-black: #000000;
+  --color-surface-chip-translucent: #d2d2d7;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+
+  /* Spacing Scale */
+  --spacing-xxs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 17px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  --spacing-section: 80px;
+
+  /* Border Radius */
+  --radius-none: 0px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  --radius-full: 9999px;
+
+  /* System Mappings */
+  --petrol: light-dark(#0066cc, #4da3ff);
+  --petrol-dark: light-dark(color-mix(in oklab, #0066cc 78%, black), color-mix(in oklab, #4da3ff 70%, white));
+  --petrol-light: light-dark(color-mix(in oklab, #0066cc 6%, white), color-mix(in oklab, #4da3ff 16%, #1c1c1e));
+  --on-petrol: light-dark(#ffffff, #04182c); /* el azul claro del modo oscuro pide texto oscuro (contraste AA) */
+  
+  /* Sidebar (macOS / iPadOS Navigation Drawer) */
+  --bar: light-dark(#ffffff, #1c1c1e);
+  --bar-surface: light-dark(#ffffff, #232325);
+  --bar-border: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1));
+  --bar-text: light-dark(#1d1d1f, #f5f5f7);
+  --bar-text-muted: light-dark(#515154, #a1a1a6);
+  --bar-hover-bg: light-dark(#f5f5f7, #2c2c2e);
+  --bar-active-bg: var(--petrol);
+  --bar-active-text: var(--on-petrol);
+
+  /* Surfaces & Canvas */
+  --surface: light-dark(#fcfcfd, #111113);
+  --paper: light-dark(#ffffff, #1c1c1e);
+  --field: light-dark(#ffffff, #2c2c2e);
+  --line: light-dark(#e5e5ea, #38383a);
+  --line-strong: light-dark(#d2d2d7, #48484a);
+
+  /* Typography (High Contrast WCAG AAA) */
+  --ink: light-dark(#1d1d1f, #f5f5f7);
+  --ink-soft: light-dark(#515154, #a1a1a6);
+
+  /* Status Colors */
+  --green: light-dark(#1d8348, #30d158);
+  --green-bg: light-dark(#eafaf1, #0f2a1a);
+  --green-text: light-dark(#145a32, #7ee2a0);
+
+  --red: light-dark(#d70015, #ff6961);
+  --red-bg: light-dark(#fdf2f2, #3a1414);
+  --red-solid: #d70015;
+  --red-text: light-dark(#900c3f, #ffb3ad);
+
+  --amber: light-dark(#b25000, #ffb340);
+  --amber-bg: light-dark(#fff8e6, #33240a);
+  --amber-text: light-dark(#7a3500, #ffd28a);
+
+  --purple-bg: light-dark(#f3e8fd, #2a1840);
+  --purple-text: light-dark(#592591, #d6b8ff);
+
+  /* Shadows (Apple signature soft blur) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-btn: none;
+
+  --r-sm: 6px;
+  --r: 8px;
+  --r-lg: 12px;
+  --r-xl: 12px;
+  --r-full: 9999px;
+
+  --md-sys-color-primary: var(--petrol);
+  --md-sys-color-on-primary: var(--on-petrol);
+  --md-sys-color-primary-container: var(--petrol-light);
+  --md-sys-color-on-primary-container: light-dark(#002b54, #cfe4ff);
+  --md-sys-color-surface: var(--surface);
+  --md-sys-color-surface-container-low: var(--paper);
+  --md-sys-color-surface-container: light-dark(#fafafb, #232325);
+  --md-sys-color-surface-container-high: light-dark(#f2f2f5, #2c2c2e);
+  --md-sys-color-surface-container-lowest: var(--paper);
+  --md-sys-color-on-surface: var(--ink);
+  --md-sys-color-on-surface-variant: var(--ink-soft);
+  --md-sys-color-outline: var(--line-strong);
+  --md-sys-color-outline-variant: var(--line);
+  --md-sys-color-success: var(--green);
+  --md-sys-color-success-container: var(--green-bg);
+  --md-sys-color-error: var(--red);
+  --md-sys-color-error-container: var(--red-bg);
+  --md-sys-color-warning: var(--amber);
+  --md-sys-color-warning-container: var(--amber-bg);
+
+  --md-shape-sm: 8px;
+  --md-shape-md: 8px;
+  --md-shape-lg: 12px;
+  --md-shape-xl: 12px;
+  --md-shape-full: 9999px;
+
+  --md-elevation-1: var(--shadow-sm);
+  --md-elevation-2: var(--shadow);
+  --md-elevation-3: var(--shadow-card);
+  --md-elevation-4: 0 16px 40px rgba(0, 0, 0, 0.08);
+
+  --md-motion-standard: 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  --md-motion-emphasized: 300ms cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  --serif: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", 'Inter', system-ui, sans-serif;
+  accent-color: var(--petrol);
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) { color-scheme: dark; }
+  &:has(> head > meta[name="color-scheme"][content="light"]) { color-scheme: light; }
+}
+
+/* Botón de tema: muestra el icono del modo al que se cambia (sin JS para saber cuál toca). */
+.theme-ico-light { display: none; }
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-ico-light { display: block; }
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-ico-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-ico-light { display: block; }
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-ico-dark { display: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+  button,
+  .btn,
+  input,
+  select,
+  textarea,
+  a,
+  dialog,
+  .pill,
+  #bar nav button {
+    transition: background-color var(--md-motion-standard),
+      border-color var(--md-motion-standard),
+      color var(--md-motion-standard),
+      box-shadow var(--md-motion-standard),
+      transform var(--md-motion-standard);
+  }
+}
+/* Navegadores sin light-dark() (Chrome <123, Safari <17.5, Responsively App): tema claro fijo. Generado de los tokens de arriba; si cambias uno, cámbialo aquí también. */
+@supports not (color: light-dark(#000, #fff)) {
+  :root {
+    --color-ink: #1d1d1f;
+    --color-body: #1d1d1f;
+    --color-divider-soft: #f0f0f0;
+    --color-hairline: #e0e0e0;
+    --color-canvas: #ffffff;
+    --color-canvas-parchment: #f5f5f7;
+    --color-surface-pearl: #fafafc;
+    --petrol: #0066cc;
+    --petrol-dark: color-mix(in oklab, #0066cc 78%, black);
+    --petrol-light: color-mix(in oklab, #0066cc 6%, white);
+    --on-petrol: #ffffff;
+    --bar: #ffffff;
+    --bar-surface: #ffffff;
+    --bar-border: rgba(0, 0, 0, 0.08);
+    --bar-text: #1d1d1f;
+    --bar-text-muted: #515154;
+    --bar-hover-bg: #f5f5f7;
+    --surface: #fcfcfd;
+    --paper: #ffffff;
+    --field: #ffffff;
+    --line: #e5e5ea;
+    --line-strong: #d2d2d7;
+    --ink: #1d1d1f;
+    --ink-soft: #515154;
+    --green: #1d8348;
+    --green-bg: #eafaf1;
+    --green-text: #145a32;
+    --red: #d70015;
+    --red-bg: #fdf2f2;
+    --red-text: #900c3f;
+    --amber: #b25000;
+    --amber-bg: #fff8e6;
+    --amber-text: #7a3500;
+    --purple-bg: #f3e8fd;
+    --purple-text: #592591;
+    --md-sys-color-on-primary-container: #002b54;
+    --md-sys-color-surface-container: #fafafb;
+    --md-sys-color-surface-container-high: #f2f2f5;
+  }
+}

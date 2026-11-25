@@ -1,0 +1,16 @@
+# Lo subido (fondos, logos, fuentes) solo se muestra: aunque alguien colara HTML o un script, nunca se ejecuta como página.
+# Directivas simples para que funcionen igual en Apache y en LiteSpeed (Hostinger).
+Options -Indexes -ExecCGI
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'none'; sandbox"
+  Header always set X-Content-Type-Options "nosniff"
+</IfModule>
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+  php_flag engine off
+</IfModule>
+<IfModule mod_php8.c>
+  php_flag engine off
+</IfModule>
