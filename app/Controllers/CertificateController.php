@@ -78,10 +78,14 @@ function action_cert_restore(array $in): void {
   $st = $s->fetchColumn();
   if ($st === false) fail('Certificado no encontrado.', 404);
   if ($st === 'valid') fail('El certificado ya está vigente.', 409);
-  // Restaurar vuelve a congelar los textos con los datos actuales: así se corrige un certificado (anular → corregir → restaurar).
-  $r = db()->prepare('SELECT x.code, x.issued_at, x.course_id, p.full_name, p.doc_id, p.final_grade FROM certificates x JOIN participants p ON p.id = x.participant_id WHERE x.id = ?'); $r->execute([$id]); $r = $r->fetch();
-  $vars = json_encode(cert_vars(curso_o_404(db(), $r['course_id']), $r, $r), JSON_UNESCAPED_UNICODE);
-  db()->prepare("UPDATE certificates SET status = 'valid', revoked_at = NULL, revoked_reason = NULL, revoked_by = NULL, vars_json = ? WHERE id = ?")->execute([$vars, $id]);
+  // Restaurar vuelve a congelar los textos y el diseño con los datos y el molde actuales: así se corrige un certificado
+  // (anular → corregir datos o molde → restaurar). Sin molde asignado se conserva el diseño con que se emitió.
+  $r = db()->prepare('SELECT x.code, x.issued_at, x.course_id, x.template_version_id, p.full_name, p.doc_id, p.final_grade FROM certificates x JOIN participants p ON p.id = x.participant_id WHERE x.id = ?'); $r->execute([$id]); $r = $r->fetch();
+  $c = curso_o_404(db(), $r['course_id']);
+  $t = $c['template_id'] ? tpl_o_404(db(), $c['template_id']) : null;
+  $vid = $t ? tpl_version_id(db(), $t) : $r['template_version_id'];
+  $vars = json_encode(cert_vars($c, $r, $r), JSON_UNESCAPED_UNICODE);
+  db()->prepare("UPDATE certificates SET status = 'valid', revoked_at = NULL, revoked_reason = NULL, revoked_by = NULL, vars_json = ?, template_version_id = ? WHERE id = ?")->execute([$vars, $vid, $id]);
   out();
 }
 
