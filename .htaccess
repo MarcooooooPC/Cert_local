@@ -25,5 +25,10 @@ RewriteRule ^c/([A-Za-z0-9]{1,20})/?$ cert.php?code=$1 [L,QSA]
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
   Header always set Cross-Origin-Opener-Policy "same-origin"
+  # JS y CSS: el navegador revalida en cada visita (304 si no cambiaron); así tras un despliegue nunca mezcla versiones viejas y nuevas.
+  # Imágenes y fuentes conservan la caché del hosting.
+  <FilesMatch "\.(js|mjs|css)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
 </IfModule>
 # HSTS lo envía PHP solo cuando la petición llegó por HTTPS (app/Core/http.php). La política de lo subido: uploads/.htaccess
