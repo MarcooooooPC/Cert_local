@@ -232,7 +232,7 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
   });
 
   main.querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
-    if (!await ask('Restaurar certificado', `<p>El certificado de <strong>${esc(b.dataset.n)}</strong> volverá a ser válido.</p>`, null, 'Restaurar')) return;
+    if (!await ask('Restaurar certificado', `<p>El certificado de <strong>${esc(b.dataset.n)}</strong> volverá a ser válido, con los datos del participante y el diseño del molde <strong>actuales</strong>.</p>`, null, 'Restaurar')) return;
     try { await api('cert_restore', { id: +b.dataset.rs }); toast('Certificado restaurado.'); certsView(id, page, q, filter); } catch (x) { toast(x.message, true); }
   });
 

@@ -509,7 +509,14 @@ check('el mismo código ahora es no válido, sin datos', json_decode($b, true)['
 check('lista de revocados incluye el motivo', count(array_filter($j['data']['items'], fn($x) => $x['code'] === $code7 && $x['revoked_reason'] === 'Error en el nombre')) === 1);
 check('revocado no se exporta para PDF', !in_array($code7, array_column(call('certs_export&course_id=' . $e5, null, '', $jar)[1]['data']['items'], 'codigo'), true));
 check('restaurar sin CSRF → 403', call('cert_restore', ['id' => $cid7], '', $jar)[0] === 403);
+// El molde se edita mientras el certificado está anulado: al restaurar debe tomar el diseño nuevo.
+$vAntes = (int)$db->query("SELECT template_version_id FROM certificates WHERE id=$cid7")->fetchColumn();
+$tid7 = (int)$db->query("SELECT template_id FROM courses WHERE id=$e5")->fetchColumn();
+$fs7 = json_decode($db->query("SELECT fields_json FROM templates WHERE id=$tid7")->fetchColumn(), true); $fs7[0]['size_pt'] = 31.5;
+$db->prepare('UPDATE templates SET fields_json = ? WHERE id = ?')->execute([json_encode($fs7), $tid7]);
 check('restaurar', call('cert_restore', ['id' => $cid7], $csrf, $jar)[0] === 200);
+$v7 = (int)$db->query("SELECT template_version_id FROM certificates WHERE id=$cid7")->fetchColumn();
+check('restaurar vuelve a congelar el diseño con el molde actual', $v7 !== $vAntes && json_decode(json_decode($db->query("SELECT row_json FROM template_versions WHERE id=$v7")->fetchColumn(), true)['fields_json'], true)[0]['size_pt'] === 31.5);
 $r7 = $db->query("SELECT * FROM certificates WHERE id=$cid7")->fetch();
 check('restaurado: vigente y sin datos de revocación', $r7['status'] === 'valid' && $r7['revoked_at'] === null && $r7['revoked_reason'] === null && $r7['revoked_by'] === null);
 check('restaurar uno vigente → 409', call('cert_restore', ['id' => $cid7], $csrf, $jar)[0] === 409);

@@ -53,7 +53,7 @@
 - **Desarrollo local**: `php -S 127.0.0.1:8080 tests/router.php` replica la reescritura `/c/CODIGO` del `.htaccess`.
 
 ## Fase 7 · Revocar, ajustes y pulido
-- **Revocar**: motivo opcional (máx. 300, espacios normalizados); guarda fecha y usuario. Revocar uno ya revocado o restaurar uno vigente → 409. **Restaurar** borra fecha, motivo y usuario de revocación. El certificado revocado no entra en el ZIP/PDF de descarga.
+- **Revocar**: motivo opcional (máx. 300, espacios normalizados); guarda fecha y usuario. Revocar uno ya revocado o restaurar uno vigente → 409. **Restaurar** borra fecha, motivo y usuario de revocación y vuelve a congelar textos **y diseño** con los datos y el molde actuales (así se corrige un certificado emitido antes de ajustar el molde). El certificado revocado no entra en el ZIP/PDF de descarga.
 - **Ajustes**: `base_url` debe ser http(s) con host; se guarda sin barra final. Cambiarla no altera PDF ya generados (el QR queda impreso).
 - **Accesibilidad**: auditoría con axe-core (WCAG 2.0/2.1 A y AA) sin violaciones en login, cursos, moldes (lista y editor), usuarios, ajustes, participantes, certificados, diálogos y páginas públicas; enlace "Saltar al contenido"; `scope="col"` en tablas; mensajes de error con `role="alert"`; secciones del curso como `nav` con `aria-current`.
 - **Móvil**: el panel y la página pública no desbordan a 390 px; botones táctiles de 44 px.
