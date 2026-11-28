@@ -152,3 +152,7 @@
 - **La genera el panel**, no el servidor: el navegador del administrador dibuja la página 1 con el mismo motor que la página pública y el PDF y la sube (`cert_og_upload`) como JPG de 1200 px ≤ 300 KB. Se hace al emitir, al restaurar y con el botón «Generar vistas previas (N)» para las que falten. PHP/GD no podría reproducir las fuentes WOFF2 ni el ajuste de líneas; que la suba el visitante permitiría cambiar la imagen de un certificado ajeno.
 - **Archivo** `uploads/og/CODIGO.jpg` (servido por `.htaccess` solo con ese patrón). La URL lleva `?v=<fecha del archivo>` para que el CDN y LinkedIn no muestren una versión vieja. Sin archivo se usa lo de antes (fondo del molde o logo).
 - **Anular borra la imagen**; restaurar la vuelve a generar. No va en los respaldos (se regenera).
+
+## Caché de JS y CSS
+- `.htaccess` envía `Cache-Control: no-cache` a `.js`, `.mjs` y `.css`: el navegador revalida en cada visita (304 si no cambiaron). Hostinger servía con `max-age` de 7 días y, tras un despliegue, el panel mezclaba módulos nuevos con `certpdf.js` viejo («CertPdf.preparador is not a function»). Imágenes y fuentes mantienen la caché del hosting.
+- El servidor de pruebas (`php -S`) no lee `.htaccess`: la cabecera se comprueba en producción con `curl -I`.
