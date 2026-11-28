@@ -77,5 +77,5 @@
     return parts;
   }
 
-  g.CertPdf = { qrCanvas, loadImg, slug, prepare, downloadPdf, downloadZip };
+  g.CertPdf = { qrCanvas, loadImg, slug, prepare, preparador, downloadPdf, downloadZip };
 })(window);

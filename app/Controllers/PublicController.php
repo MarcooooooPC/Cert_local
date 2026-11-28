@@ -30,11 +30,14 @@ function page_cert(): void {
       $r = cert_publico(db(), $code);
       $state = !$r ? 'nf' : ($r['status'] === 'valid' ? 'valid' : 'revoked');
       $url = base_url() . '/c/' . $code;
-      // Vista previa al compartir (LinkedIn/WhatsApp no ejecutan JS): molde en blanco o logo, nunca datos personales.
+      // Vista previa al compartir (LinkedIn/WhatsApp no ejecutan JS): el certificado completo si el panel ya lo generó; si no, el molde en blanco o el logo.
       if ($state === 'valid') {
         $issuer = $r['company']; // empresa que dicta el curso; sin ella, la tarjeta muestra el sitio
         $img = $r['template']['image_url'] ?? (site_icon() ? 'uploads/templates/' . site_icon() : '');
-        if ($img) {
+        if (is_file($og = cert_og_path($code))) { // certificado completo generado en el panel; ?v= cambia al regenerarla (CDN y LinkedIn)
+          $ogImg = base_url() . "/uploads/og/$code.jpg?v=" . filemtime($og);
+          $ogSize = @getimagesize($og) ?: null;
+        } elseif ($img) {
           $img = basename($img);
           $img = tpl_og($img) ?? $img; // copia comprimida para WhatsApp; si falla, el original
           $ogImg = base_url() . '/uploads/templates/' . $img;

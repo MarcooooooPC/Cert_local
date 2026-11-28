@@ -10,3 +10,4 @@ storage/backups/
 storage/schema-*
 uploads/fonts/*
 .impeccable/
+uploads/og/

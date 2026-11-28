@@ -47,6 +47,14 @@ function cert_datos(array $c, array $cert): array {
   return is_array($v) ? $v : cert_vars($c, $cert, $cert);
 }
 
+// Vista previa para compartir (LinkedIn/WhatsApp): el certificado completo en JPG, dibujado y subido por el panel.
+// Vive junto a uploads/templates (uploads/og/CODIGO.jpg); no va en los respaldos porque se puede volver a generar.
+function cert_og_path(string $code): string {
+  $d = dirname(tpl_dir()) . '/og';
+  if (!is_dir($d)) @mkdir($d, 0755, true);
+  return "$d/$code.jpg";
+}
+
 // Congela los textos de los certificados que aún no los tienen (migración). $cert debe traer los datos del participante.
 function cert_congelar_pendientes(PDO $db): void {
   $s = $db->query('SELECT x.id, x.code, x.issued_at, x.course_id, p.full_name, p.doc_id, p.final_grade FROM certificates x JOIN participants p ON p.id = x.participant_id WHERE x.vars_json IS NULL');
