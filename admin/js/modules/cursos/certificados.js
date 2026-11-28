@@ -9,6 +9,32 @@ import { cursosView } from './lista.js';
 import { cursoForm } from './formulario.js';
 
 let foco = false; // el buscador tenía el foco al repintar
+
+// Vista previa para compartir (LinkedIn/WhatsApp no ejecutan JS): se dibuja aquí la página 1 del certificado y se sube como
+// JPG de 1200 px ≤ 300 KB. codes: solo esos (p. ej. al restaurar); sin codes, los vigentes del curso que aún no la tienen.
+const OG_ANCHO = 1200, OG_MAX = 300 * 1024;
+async function ogBlob(src) {
+  const c = document.createElement('canvas'); c.width = OG_ANCHO; c.height = Math.round(src.height * OG_ANCHO / src.width);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(src, 0, 0, c.width, c.height);
+  let b;
+  for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) { b = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); if (b.size <= OG_MAX) break; }
+  return b;
+}
+async function vistasCompartir(id, codes) {
+  const e = await api(`certs_export&course_id=${id}` + (codes ? '&codes=' + codes.map(encodeURIComponent).join(',') : ''));
+  const items = codes ? e.items : e.items.filter(v => !v._og);
+  const prep = CertPdf.preparador(e, '../');
+  let ok = 0;
+  for (const [i, v] of items.entries()) {
+    if (items.length > 1) avance(`Generando vistas previas para compartir ${i + 1} de ${items.length}…`);
+    try {
+      const fd = new FormData(); fd.set('code', v.codigo); fd.set('image', await ogBlob((await prep(v)).make(v)[0]), 'og.jpg');
+      await api('cert_og_upload', fd); ok++;
+    } catch (x) { console.error(x); /* se informa el total al final */ }
+  }
+  return [ok, items.length];
+}
+const avisoVistas = ([ok, n]) => n && toast(ok === n ? `Vistas previas para compartir listas: ${ok}.` : `Vistas previas: ${ok} de ${n}; el resto falló. Usa «Generar vistas previas» para reintentar.`, ok !== n);
 export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
   const [c, d] = await Promise.all([api('course_get&id=' + id), api(`certs_list&course_id=${id}&page=${page}&q=${encodeURIComponent(q)}&filter=${encodeURIComponent(filter)}`)]);
   fijar(`cursos/${id}/cert`, { p: page, q, f: filter });
@@ -68,6 +94,10 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span>Emitir certificados (${d.por_emitir})</span>
       </button>
+      ${d.sin_vista ? `<button type="button" class="sec" id="og-gen" title="Imagen del certificado al compartir en LinkedIn o WhatsApp">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span>Generar vistas previas (${d.sin_vista})</span>
+      </button>` : ''}
       <button type="button" class="sec" id="zip" ${d.tiene_molde && d.total ? '' : 'disabled'}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span>Descargar todos (ZIP)</span>
@@ -168,7 +198,7 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
                     <button type="button" class="icon-btn" data-qr="${x.code}" title="Ver QR" aria-label="Ver QR"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/></svg></button>
                     <button type="button" class="icon-btn danger" data-rv="${x.id}" data-n="${esc(x.full_name)}" title="Anular" aria-label="Anular"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></button>
                   ` : `
-                    <button type="button" class="icon-btn" data-rs="${x.id}" data-n="${esc(x.full_name)}" title="Restaurar" aria-label="Restaurar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></button>
+                    <button type="button" class="icon-btn" data-rs="${x.id}" data-code="${esc(x.code)}" data-n="${esc(x.full_name)}" title="Restaurar" aria-label="Restaurar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></button>
                   `}
                 </div>
               </td>
@@ -204,7 +234,7 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
     const mas = d.por_emitir - d.por_emitir_muestra.length;
     if (!await ask('Emitir certificados', `<p>Se emitirán <strong>${d.por_emitir}</strong> certificados a los participantes que cumplen las condiciones, entre ellos:</p>
       <ul>${d.por_emitir_muestra.map(n => `<li>${esc(n)}</li>`).join('')}${mas > 0 ? `<li>y ${mas} más</li>` : ''}</ul>`, null, `Emitir ${d.por_emitir}`)) return;
-    try { const r = await api('issue', { course_id: id }); certsView(id, 1, '', '', r.emitidos); } catch (x) { toast(x.message, true); }
+    try { const r = await api('issue', { course_id: id }); await certsView(id, 1, '', '', r.emitidos); if (r.emitidos) { avisoVistas(await vistasCompartir(id)); certsView(id, 1, '', '', r.emitidos); } } catch (x) { toast(x.message, true); }
   };
 
   // Sin HTTPS navigator.clipboard no existe: respaldo con textarea + execCommand.
@@ -233,7 +263,7 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
 
   main.querySelectorAll('[data-rs]').forEach(b => b.onclick = async () => {
     if (!await ask('Restaurar certificado', `<p>El certificado de <strong>${esc(b.dataset.n)}</strong> volverá a ser válido, con los datos del participante y el diseño del molde <strong>actuales</strong>.</p>`, null, 'Restaurar')) return;
-    try { await api('cert_restore', { id: +b.dataset.rs }); toast('Certificado restaurado.'); certsView(id, page, q, filter); } catch (x) { toast(x.message, true); }
+    try { await api('cert_restore', { id: +b.dataset.rs }); const [ok] = await vistasCompartir(id, [b.dataset.code]).catch(() => [0]); toast(ok ? 'Certificado restaurado.' : 'Certificado restaurado, pero falló su vista previa para compartir: usa «Generar vistas previas».', !ok); certsView(id, page, q, filter); } catch (x) { toast(x.message, true); }
   });
 
   main.querySelectorAll('[data-pdf]').forEach(b => b.onclick = async () => {
@@ -282,6 +312,11 @@ export async function certsView(id, page = 1, q = '', filter = '', aviso = 0) {
       }));
     } catch (x) { box.textContent = x.message || 'No se pudo generar la vista previa.'; }
   }
+  $('#og-gen')?.addEventListener('click', async e => {
+    e.currentTarget.disabled = true;
+    try { avisoVistas(await vistasCompartir(id)); } catch (x) { toast(x.message, true); }
+    certsView(id, page, q, filter);
+  });
   $('#zip').onclick = () => zipDe(); $('#av-zip')?.addEventListener('click', () => zipDe());
 
   const zipDe = async codes => {

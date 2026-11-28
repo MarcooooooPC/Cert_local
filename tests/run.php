@@ -521,6 +521,25 @@ $r7 = $db->query("SELECT * FROM certificates WHERE id=$cid7")->fetch();
 check('restaurado: vigente y sin datos de revocación', $r7['status'] === 'valid' && $r7['revoked_at'] === null && $r7['revoked_reason'] === null && $r7['revoked_by'] === null);
 check('restaurar uno vigente → 409', call('cert_restore', ['id' => $cid7], $csrf, $jar)[0] === 409);
 check('el QR vuelve a mostrar válido', json_decode(get('api/index.php?a=public_cert&code=' . $code7)[2], true)['data']['status'] === 'valid');
+// ---- Vista previa para compartir (JPG del certificado completo subido por el panel) ----
+$jpg = function (int $w, int $h) use ($tmp): string { $im = imagecreatetruecolor($w, $h); imagefill($im, 0, 0, imagecolorallocate($im, 200, 30, 30)); imagejpeg($im, $f = "$tmp/og_{$w}x$h.jpg", 80); return $f; };
+$ogUp = fn($code, $file, $tok = null) => call('cert_og_upload', null, $tok ?? $csrf, $jar, ['code' => $code, 'image' => new CURLFile($file, 'image/jpeg', 'og.jpg')]);
+$ogOk = $jpg(1200, 848);
+check('vista previa: sin sesión → rechazado', in_array(call('cert_og_upload', null, $csrf, $jarX, ['code' => $code7, 'image' => new CURLFile($ogOk, 'image/jpeg', 'og.jpg')])[0], [401, 403], true));
+check('vista previa: sin CSRF → 403', $ogUp($code7, $ogOk, '')[0] === 403);
+check('vista previa: código inexistente → 404', $ogUp('222222222222', $ogOk)[0] === 404);
+check('vista previa: PNG disfrazado de JPG → 415', $ogUp($code7, $good)[0] === 415);
+check('vista previa: JPG demasiado pequeño → 415', $ogUp($code7, $jpg(300, 200))[0] === 415);
+$sinAntes = call('certs_list&course_id=' . $e5, null, '', $jar)[1]['data']['sin_vista'];
+check('vista previa: subir JPG válido', $ogUp($code7, $ogOk)[0] === 200 && is_file("$tmp/og/$code7.jpg"));
+check('vista previa: la lista descuenta las pendientes', call('certs_list&course_id=' . $e5, null, '', $jar)[1]['data']['sin_vista'] === $sinAntes - 1);
+$exp = array_column(call('certs_export&course_id=' . $e5, null, '', $jar)[1]['data']['items'], '_og', 'codigo');
+check('vista previa: la exportación marca cuál la tiene', $exp[$code7] === true && in_array(false, $exp, true));
+check('vista previa: LinkedIn/WhatsApp reciben el certificado completo', (bool)preg_match('#og:image" content="[^"]*/uploads/og/' . $code7 . '\.jpg\?v=\d+"#', get('cert.php?code=' . $code7)[2]));
+call('cert_revoke', ['id' => $cid7], $csrf, $jar); clearstatcache(); // is_file() quedó en caché con el archivo presente
+check('vista previa: anular la borra', !is_file("$tmp/og/$code7.jpg"));
+check('vista previa: no se sube a un anulado → 409', $ogUp($code7, $ogOk)[0] === 409);
+call('cert_restore', ['id' => $cid7], $csrf, $jar);
 check('revocar sin motivo es válido (motivo opcional)', call('cert_revoke', ['id' => $cid7], $csrf, $jar)[0] === 200 && $db->query("SELECT revoked_reason FROM certificates WHERE id=$cid7")->fetchColumn() === null);
 check('certificado inexistente → 404', call('cert_revoke', ['id' => 99999], $csrf, $jar)[0] === 404);
 check('ajustes sin sesión → 401', call('settings_get', null, '', $jarX)[0] === 401);

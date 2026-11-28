@@ -36,6 +36,7 @@ return [
   'cert_preview' => ['CertificateController', false],
   'cert_revoke' => ['CertificateController', true],
   'cert_restore' => ['CertificateController', true],
+  'cert_og_upload' => ['CertificateController', true],
   'companies_list' => ['CompanyController', false],
   'company_save' => ['CompanyController', true],
   'company_delete' => ['CompanyController', true],

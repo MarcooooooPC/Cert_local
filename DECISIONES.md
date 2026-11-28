@@ -146,3 +146,9 @@
 - **Clave SMTP**: se guarda en `settings` (`mail_pass`), nunca se devuelve al navegador, **no se incluye en los respaldos** y al restaurar se conserva la del servidor. Campo vacío al guardar = conservar la clave.
 - **Plantilla**: variables `{nombre} {curso} {codigo} {enlace} {sitio}`; `{enlace}` es obligatorio y en HTML se dibuja como botón «Ver certificado». Se envía texto plano + HTML (multipart). Todo valor se escapa en la versión HTML.
 - **Se envía el enlace al certificado, no el PDF adjunto** (el PDF se genera en el navegador; el enlace siempre refleja si se anuló).
+
+## Vista previa al compartir (LinkedIn/WhatsApp)
+- **Certificado completo** (con nombre y datos que muestre el molde), a pedido del cliente: antes era solo el fondo del molde, que en moldes de fondo blanco salía en blanco.
+- **La genera el panel**, no el servidor: el navegador del administrador dibuja la página 1 con el mismo motor que la página pública y el PDF y la sube (`cert_og_upload`) como JPG de 1200 px ≤ 300 KB. Se hace al emitir, al restaurar y con el botón «Generar vistas previas (N)» para las que falten. PHP/GD no podría reproducir las fuentes WOFF2 ni el ajuste de líneas; que la suba el visitante permitiría cambiar la imagen de un certificado ajeno.
+- **Archivo** `uploads/og/CODIGO.jpg` (servido por `.htaccess` solo con ese patrón). La URL lleva `?v=<fecha del archivo>` para que el CDN y LinkedIn no muestren una versión vieja. Sin archivo se usa lo de antes (fondo del molde o logo).
+- **Anular borra la imagen**; restaurar la vuelve a generar. No va en los respaldos (se regenera).

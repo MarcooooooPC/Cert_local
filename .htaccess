@@ -9,8 +9,8 @@ RewriteEngine On
 # 1. Carpetas internas: código, configuración (clave de MySQL), esquema SQL, logs y pruebas.
 RewriteRule ^(app|config|database|storage|tests|dist)(/|$) - [F,L]
 
-# 2. Subidas: solo se sirven las imágenes de moldes y las fuentes; cualquier otra cosa (p. ej. un .php colado) da 403.
-RewriteRule ^uploads/(?!(templates/[^/]+\.(png|jpe?g)|fonts/[^/]+\.(woff2?|ttf|otf))$) - [F,L,NC]
+# 2. Subidas: solo se sirven las imágenes de moldes, las vistas previas para compartir (og/) y las fuentes; cualquier otra cosa (p. ej. un .php colado) da 403.
+RewriteRule ^uploads/(?!(templates/[^/]+\.(png|jpe?g)|fonts/[^/]+\.(woff2?|ttf|otf)|og/[A-Z2-9]{12}\.jpg)$) - [F,L,NC]
 
 # 3. Archivos ocultos (.htaccess, .git…), salvo /.well-known/ (validación del SSL), y de texto con datos.
 RewriteRule (^|/)\.(?!well-known/) - [F,L]

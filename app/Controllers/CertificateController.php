@@ -30,7 +30,9 @@ function action_certs_list(array $in): void {
   $s->execute($args);
   [$pe, $pn, $muestra] = pendientes_emision(db(), $c);
   $r = db()->prepare("SELECT COALESCE(SUM(status = 'valid'),0) AS vigentes, COALESCE(SUM(status = 'revoked'),0) AS revocados FROM certificates WHERE course_id = ?"); $r->execute([$c['id']]);
-  out(['items' => $s->fetchAll(), 'total' => (int)$t->fetchColumn(), 'page' => $page, 'per' => $per, 'por_emitir' => $pe, 'por_emitir_muestra' => $muestra, 'resumen' => array_map('intval', $r->fetch()), 'no_elegibles' => $pn, 'tiene_molde' => (bool)$c['template_id'], 'base_url' => base_url()]);
+  $v = db()->prepare("SELECT code FROM certificates WHERE course_id = ? AND status = 'valid'"); $v->execute([$c['id']]);
+  $sinOg = count(array_filter($v->fetchAll(PDO::FETCH_COLUMN), fn($code) => !is_file(cert_og_path($code))));
+  out(['items' => $s->fetchAll(), 'total' => (int)$t->fetchColumn(), 'page' => $page, 'per' => $per, 'por_emitir' => $pe, 'por_emitir_muestra' => $muestra, 'resumen' => array_map('intval', $r->fetch()), 'no_elegibles' => $pn, 'tiene_molde' => (bool)$c['template_id'], 'base_url' => base_url(), 'sin_vista' => $sinOg]);
 }
 
 function action_certs_export(array $in): void {
@@ -52,7 +54,7 @@ function action_certs_export(array $in): void {
       $t = cert_molde(db(), $r, $c) ?? fail('El curso no tiene molde asignado.', 422);
       $templates[$k] = tpl_row_out($t, true) + ['fonts' => fonts_de_campos(tpl_campos_todos($t))];
     }
-    $items[] = cert_datos($c, $r) + ['_t' => $k];
+    $items[] = cert_datos($c, $r) + ['_t' => $k, '_og' => is_file(cert_og_path($r['code']))];
   }
   out(['templates' => $templates, 'base_url' => base_url(), 'course' => $c['name'], 'items' => $items]);
 }
@@ -60,14 +62,15 @@ function action_certs_export(array $in): void {
 function action_cert_revoke(array $in): void {
   $me = require_login();
   $id = (int)($in['id'] ?? 0);
-  $s = db()->prepare('SELECT status FROM certificates WHERE id = ?'); $s->execute([$id]);
-  $st = $s->fetchColumn();
+  $s = db()->prepare('SELECT status, code FROM certificates WHERE id = ?'); $s->execute([$id]);
+  [$st, $code] = $s->fetch(PDO::FETCH_NUM) ?: [false, ''];
   if ($st === false) fail('Certificado no encontrado.', 404);
   if ($st === 'revoked') fail('El certificado ya está anulado.', 409);
   $reason = trim(preg_replace('/\s+/u', ' ', (string)($in['reason'] ?? '')));
   if (mb_strlen($reason) > 300) fail('El motivo no puede superar 300 caracteres.', 422);
   db()->prepare("UPDATE certificates SET status = 'revoked', revoked_at = ?, revoked_reason = ?, revoked_by = ? WHERE id = ?")
     ->execute([now(), $reason !== '' ? $reason : null, $me['id'], $id]);
+  @unlink(cert_og_path($code)); // anulado: su imagen con nombre deja de circular desde el portal
   out();
 }
 
@@ -103,4 +106,22 @@ function action_cert_preview(array $in): void {
   out(['template' => tpl_row_out($t, true), 'base_url' => base_url(),
        'vars' => cert_vars($c, $p, ['issued_at' => date('Y-m-d'), 'code' => 'XXXXXXXXXXXX']), 'participant_id' => (int)$p['id'],
        'participants' => array_map(fn($x) => ['id' => (int)$x['id'], 'name' => $x['full_name'], 'ok' => puede_emitir($c, $x)], $ps)]);
+}
+
+// Vista previa para compartir: JPG del certificado completo dibujado en el panel (mismo motor que la página y el PDF).
+// Solo certificados vigentes; se valida que sea un JPEG real, ≤ 300 KB (WhatsApp) y de tamaño razonable.
+function action_cert_og_upload(array $in): void {
+  require_login();
+  $s = db()->prepare('SELECT status, code FROM certificates WHERE code = ?'); $s->execute([(string)($in['code'] ?? '')]);
+  $r = $s->fetch() ?: fail('Certificado no encontrado.', 404);
+  if ($r['status'] !== 'valid') fail('El certificado está anulado.', 409);
+  $f = $_FILES['image'] ?? null;
+  if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) fail('Falta la imagen.', 422);
+  if ($f['size'] > TPL_OG_MAX_BYTES) fail('La vista previa supera 300 KB.', 413);
+  $i = @getimagesize($f['tmp_name']);
+  if (!$i || $i[2] !== IMAGETYPE_JPEG || $i[0] < 600 || $i[0] > 2400 || $i[1] < 300 || $i[1] > 2400) fail('La vista previa debe ser un JPG de 600 a 2400 px.', 415);
+  $dst = cert_og_path($r['code']);
+  if (!move_uploaded_file($f['tmp_name'], $dst)) fail('No se pudo guardar la vista previa (permisos de uploads/).', 500);
+  @chmod($dst, 0644);
+  out(['code' => $r['code']]);
 }

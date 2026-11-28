@@ -1,7 +1,7 @@
 // Pruebas de interfaz: cd tests && npm install && npx playwright install chromium && npm run ui  (usa SQLite temporal)
 import { chromium } from 'playwright';
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readdirSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -20,7 +20,8 @@ const xr = pdf.length;
 pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + offs.map(o => String(o).padStart(10, '0') + ' 00000 n \n').join('') + `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`;
 writeFileSync(join(tmp, 'm.pdf'), pdf);
 
-const previas = new Set(readdirSync(join(root, 'uploads/templates'))); // archivos reales: no se tocan al limpiar
+const previas = new Set(readdirSync(join(root, 'uploads/templates')));
+const previasOg = new Set(existsSync(join(root, 'uploads/og')) ? readdirSync(join(root, 'uploads/og')) : []); // archivos reales: no se tocan al limpiar
 const port = 8950 + (process.pid % 40);
 const srv = spawn('php', ['-S', `127.0.0.1:${port}`, '-t', root, join(root, 'tests/router.php')], { env: { ...process.env, CERT_CONFIG: cfg }, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 700));
@@ -132,6 +133,10 @@ try {
   await pg.screenshot({ path: join(tmp, 'aviso-emision.png'), clip: { x: 0, y: Math.max(0, (await pg.locator('.aviso').boundingBox()).y - 90), width: 1280, height: 200 } });
   const code = await pg.textContent('tbody code');
   check('emitido: código de 12 caracteres', /^[A-Z2-9]{12}$/.test(code));
+  await pg.waitForFunction(() => /Vistas previas para compartir listas: 1/.test(document.querySelector('#msg')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => {});
+  const ogF = join(root, 'uploads/og', code + '.jpg'), ogB = existsSync(ogF) ? readFileSync(ogF) : Buffer.alloc(0);
+  check('al emitir se sube la vista previa para compartir (JPG ≤ 300 KB)', ogB[0] === 0xFF && ogB[1] === 0xD8 && ogB.length > 5000 && ogB.length <= 300 * 1024);
+  if (ogB.length) writeFileSync(join(tmp, 'og.jpg'), ogB);
   const [pd] = await Promise.all([pg.waitForEvent('download'), pg.click('[data-pdf]')]);
   const pbuf = readFileSync(await pd.path());
   check('PDF individual válido (%PDF)', pbuf.subarray(0, 5).toString() === '%PDF-' && pbuf.length > 20000 && /Certificado_Ana_P.*\.pdf$/.test(pd.suggestedFilename()));
@@ -265,6 +270,7 @@ try {
   } check('molde sin archivo de fondo: el editor abre y avisa', avisoFondo.includes('Falta la imagen de fondo') || (console.log('  #msg:', avisoFondo), false));
 } catch (e) { console.log('ERROR', e.message, errs.length ? '\n  consola: ' + errs.join('\n  ') : ''); fails++; await pg.screenshot({ path: join(tmp, 'err.png') }); }
 await br.close(); srv.kill();
+for (const f of existsSync(join(root, 'uploads/og')) ? readdirSync(join(root, 'uploads/og')) : []) if (!previasOg.has(f)) rmSync(join(root, 'uploads/og', f));
 for (const f of readdirSync(join(root, 'uploads/templates'))) if (/^tpl_/.test(f) && !previas.has(f)) rmSync(join(root, 'uploads/templates', f)); // borra solo lo que subió la prueba, nunca los moldes reales
 console.log(fails ? `${fails} FALLAS (capturas en ${tmp})` : `Todo OK (captura: ${tmp}/editor.png)`);
 process.exit(fails ? 1 : 0);
